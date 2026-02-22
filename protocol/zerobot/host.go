@@ -25,18 +25,29 @@ func makeContext(ctx *zero.Ctx, onlyToMe bool) *Context {
 	return pc
 }
 
-// Install registers ZeroBot message handlers: OnMessage (all messages) and OnMessageReply (reply/@ bot only).
-// It runs protocol.Dispatch(Chain/ChainOn) with a zerobot.Context. Call once from host after plugins are loaded.
+// Install registers ZeroBot message handlers with no global middlewares. Same as InstallWithMiddlewares(nil).
 func Install() {
+	InstallWithMiddlewares(nil)
+}
+
+// InstallWithMiddlewares registers ZeroBot message handlers, optionally wrapping the whole chain with middlewares.
+// Middlewares are applied in order: mw[0](mw[1](...(dispatch(chain)))). Use for global whitelist etc., e.g. zerobot.InstallWithMiddlewares([]protocol.Middleware{whitelist.New(services.Cache)}).
+func InstallWithMiddlewares(middlewares []protocol.Middleware) {
+	wrap := func(h protocol.Handler) protocol.Handler {
+		for i := len(middlewares) - 1; i >= 0; i-- {
+			h = middlewares[i](h)
+		}
+		return h
+	}
 	// OnMessage: all messages -> default chain (HookMessage).
 	zero.OnMessage().Handle(func(ctx *zero.Ctx) {
-		protocol.Dispatch(protocol.Chain())(makeContext(ctx, false))
+		wrap(protocol.Dispatch(protocol.Chain()))(makeContext(ctx, false))
 	})
 	// OnMessageReply: only reply to bot or @ bot -> HookMessageReply chain.
 	zero.OnMessage(zero.OnlyToMe).Handle(func(ctx *zero.Ctx) {
 		chain := protocol.ChainOn(protocol.HookMessageReply)
 		if len(chain) > 0 {
-			protocol.Dispatch(chain)(makeContext(ctx, true))
+			wrap(protocol.Dispatch(chain))(makeContext(ctx, true))
 		}
 	})
 }
