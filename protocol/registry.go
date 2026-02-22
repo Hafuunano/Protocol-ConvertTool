@@ -30,3 +30,16 @@ func ChainOn(hook string) []Handler {
 	copy(out, list)
 	return out
 }
+
+// Dispatch returns a single Handler that runs the given handlers in sequence.
+// Execution stops after a handler that called BlockNext(). Used by protocol adapters (e.g. zerobot).
+func Dispatch(handlers []Handler) Handler {
+	return func(ctx Context) {
+		for _, h := range handlers {
+			h(ctx)
+			if ctx.ShouldBlockNext() {
+				break
+			}
+		}
+	}
+}
