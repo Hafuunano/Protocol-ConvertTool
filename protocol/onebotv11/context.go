@@ -18,6 +18,10 @@ type Context struct {
 	// IsSuperAdminFunc checks whether the given userID is a super admin. If nil, IsSuperAdmin() returns false.
 	// Set this when building Context to enable super admin checks (e.g. from config SuperAdminIDs).
 	IsSuperAdminFunc func(userID string) bool
+	// OnlyToMe, if non-nil, overrides IsOnlyToMe() result. Otherwise derived from message (at-segment to self).
+	OnlyToMe *bool
+	// blockNext is set by BlockNext(); host reads via ShouldBlockNext() to stop the chain.
+	blockNext bool
 }
 
 // Send implements protocol.Context. Builds send_private_msg/send_group_msg JSON and passes it to Out (no actual send).
@@ -42,6 +46,33 @@ func (c *Context) Reply(msg protocol.Message) error {
 		c.Out(payload)
 	}
 	return nil
+}
+
+// SendWithReply implements protocol.Context. Same as Reply: sends msg with reply segment prepended.
+func (c *Context) SendWithReply(msg protocol.Message) error {
+	return c.Reply(msg)
+}
+
+// SendPlainMessage implements protocol.Context. Sends a single plain-text message.
+func (c *Context) SendPlainMessage(text string) error {
+	return c.Send(protocol.Message{
+		{Type: protocol.SegmentTypeText, Data: map[string]any{"text": text}},
+	})
+}
+
+// SendWithImage implements protocol.Context. Sends a single image; file can be path, URL, or base64://...
+func (c *Context) SendWithImage(file string) error {
+	return c.Send(protocol.Message{
+		{Type: protocol.SegmentTypeImage, Data: map[string]any{"file": file}},
+	})
+}
+
+// SendWithImageAndText implements protocol.Context. Sends image then text (e.g. image + caption).
+func (c *Context) SendWithImageAndText(file string, text string) error {
+	return c.Send(protocol.Message{
+		{Type: protocol.SegmentTypeImage, Data: map[string]any{"file": file}},
+		{Type: protocol.SegmentTypeText, Data: map[string]any{"text": text}},
+	})
 }
 
 // buildSendPayload returns the OneBot v11 API request JSON (action + params) for sending msg.
@@ -131,6 +162,53 @@ func (c *Context) IsSuperAdmin() bool {
 		return false
 	}
 	return c.IsSuperAdminFunc(c.UserID())
+}
+
+// IsAdmin implements protocol.Context. Returns true if sender is group admin or owner (Sender.Role).
+func (c *Context) IsAdmin() bool {
+	if c == nil || c.Event == nil || c.Event.Sender == nil {
+		return false
+	}
+	r := c.Event.Sender.Role
+	return r == "admin" || r == "owner"
+}
+
+// IsOnlyToMe implements protocol.Context. If OnlyToMe is set by host, use it; else true when message @-s self.
+func (c *Context) IsOnlyToMe() bool {
+	if c == nil || c.Event == nil {
+		return false
+	}
+	if c.OnlyToMe != nil {
+		return *c.OnlyToMe
+	}
+	selfIDStr := strconv.FormatInt(c.Event.SelfID, 10)
+	for _, seg := range c.Event.Message {
+		if seg.Type == protocol.SegmentTypeAt {
+			if qq, _ := seg.Data["qq"]; qq != nil {
+				switch v := qq.(type) {
+				case string:
+					if v == selfIDStr {
+						return true
+					}
+				case float64:
+					if int64(v) == c.Event.SelfID {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// BlockNext implements protocol.Context. Marks that the plugin handled the event; host should stop the chain.
+func (c *Context) BlockNext() {
+	c.blockNext = true
+}
+
+// ShouldBlockNext implements protocol.Context. Returns true after BlockNext() was called.
+func (c *Context) ShouldBlockNext() bool {
+	return c.blockNext
 }
 
 // Ensure Context implements protocol.Context at compile time.

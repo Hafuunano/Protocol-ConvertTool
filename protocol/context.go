@@ -7,6 +7,14 @@ type Context interface {
 	Send(msg Message) error
 	// Reply sends a reply to the current message (e.g. prepends reply segment or uses reply API).
 	Reply(msg Message) error
+	// SendWithReply sends the given message as a reply to the current message (same semantics as Reply).
+	SendWithReply(msg Message) error
+	// SendPlainMessage sends a single plain-text message. Convenience for sending text without building Message.
+	SendPlainMessage(text string) error
+	// SendWithImage sends a single image. file can be path, URL, or base64://... per protocol.
+	SendWithImage(file string) error
+	// SendWithImageAndText sends one image followed by plain text (e.g. image + caption). file can be path, URL, or base64://...
+	SendWithImageAndText(file string, text string) error
 	// UserID returns the sender user ID of the current event.
 	UserID() string
 	// GroupID returns the group ID when in a group chat, or empty/"0" for private chat.
@@ -22,6 +30,14 @@ type Context interface {
 	// SenderNickname returns the sender display name (nickname or card per OneBot sender).
 	SenderNickname() string
 	// IsSuperAdmin returns true if the current user is a super admin (e.g. configured bot owner/admin).
-	// Plugins can use this to gate privileged commands.
+	// Plugins can use this to gate privileged commands (TriggerOnlySuperAdmin).
 	IsSuperAdmin() bool
+	// IsAdmin returns true if the sender is a group admin or owner (TriggerOnlyAdmin). Private chat has no role, returns false.
+	IsAdmin() bool
+	// IsOnlyToMe returns true when the message is reply-to-bot or @-bot (OnlyToMe). Set by host or derived from message.
+	IsOnlyToMe() bool
+	// BlockNext marks that this plugin handled the event; host should not run the rest of the chain (BlockNextPlugin).
+	BlockNext()
+	// ShouldBlockNext returns true after BlockNext() was called. Used by host after each handler to decide whether to break.
+	ShouldBlockNext() bool
 }
