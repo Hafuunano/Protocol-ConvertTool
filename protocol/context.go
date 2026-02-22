@@ -21,4 +21,7 @@ type Context interface {
 	RawMessage() string
 	// SenderNickname returns the sender display name (nickname or card per OneBot sender).
 	SenderNickname() string
+	// IsSuperAdmin returns true if the current user is a super admin (e.g. configured bot owner/admin).
+	// Plugins can use this to gate privileged commands.
+	IsSuperAdmin() bool
 }

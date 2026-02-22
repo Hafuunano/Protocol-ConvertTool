@@ -10,6 +10,9 @@ import (
 // Context wraps ZeroBot's *zero.Ctx and implements protocol.Context so plugins can use Plugin(ctx) with ZeroBot.
 type Context struct {
 	Ctx *zero.Ctx
+	// IsSuperAdminFunc checks whether the given userID is a super admin. If nil, IsSuperAdmin() returns false.
+	// Set this when building Context to enable super admin checks (e.g. from config SuperAdminIDs).
+	IsSuperAdminFunc func(userID string) bool
 }
 
 // NewContext returns a protocol.Context that sends via ZeroBot's Ctx.
@@ -83,6 +86,14 @@ func (c *Context) SenderNickname() string {
 		return ""
 	}
 	return c.Ctx.Event.Sender.Name()
+}
+
+// IsSuperAdmin implements protocol.Context. Returns true if current user is super admin (via IsSuperAdminFunc).
+func (c *Context) IsSuperAdmin() bool {
+	if c.IsSuperAdminFunc == nil {
+		return false
+	}
+	return c.IsSuperAdminFunc(c.UserID())
 }
 
 // Ensure Context implements protocol.Context at compile time.

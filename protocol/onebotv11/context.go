@@ -15,6 +15,9 @@ type Context struct {
 	// Out receives the JSON payload that would be sent (action + params). Caller may log or send it elsewhere.
 	// If nil, Send/Reply still build the payload but do nothing with it.
 	Out func(payload []byte)
+	// IsSuperAdminFunc checks whether the given userID is a super admin. If nil, IsSuperAdmin() returns false.
+	// Set this when building Context to enable super admin checks (e.g. from config SuperAdminIDs).
+	IsSuperAdminFunc func(userID string) bool
 }
 
 // Send implements protocol.Context. Builds send_private_msg/send_group_msg JSON and passes it to Out (no actual send).
@@ -120,6 +123,14 @@ func (c *Context) SenderNickname() string {
 		return ""
 	}
 	return c.Event.Sender.DisplayName()
+}
+
+// IsSuperAdmin implements protocol.Context. Returns true if current user is super admin (via IsSuperAdminFunc).
+func (c *Context) IsSuperAdmin() bool {
+	if c == nil || c.IsSuperAdminFunc == nil {
+		return false
+	}
+	return c.IsSuperAdminFunc(c.UserID())
 }
 
 // Ensure Context implements protocol.Context at compile time.
