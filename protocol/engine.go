@@ -2,6 +2,8 @@
 // Meta is required at init: use Engine.WithMeta(Meta) then chain OnMessage()/OnMessageReply(), IsOnlyToMe(), etc., then Func(handler).
 package protocol
 
+import "strings"
+
 // Engine is the entry for fluent handler registration. Plugins must call Engine.WithMeta(Meta) first, then OnMessage().Func(handler), etc.
 var Engine = &engine{}
 
@@ -18,8 +20,13 @@ func (e *engine) WithMeta(meta interface{}) *PluginBuilder {
 }
 
 // OnMessage returns a Builder for the default message chain (HookMessage).
-func (b *PluginBuilder) OnMessage() *Builder {
-	return &Builder{hook: HookMessage}
+// With no args: all messages trigger. With one arg: only when PlainText (trimmed) equals that string, e.g. OnMessage("ping") replaces ctx.PlainText() == "ping" in handler.
+func (b *PluginBuilder) OnMessage(trigger ...string) *Builder {
+	exact := ""
+	if len(trigger) >= 1 {
+		exact = trigger[0]
+	}
+	return &Builder{hook: HookMessage, exactText: exact}
 }
 
 // OnMessageNamed returns a Builder for a named message chain. Name "" or "Global" maps to HookMessage; other names reserved for future use.
@@ -38,6 +45,7 @@ func (b *PluginBuilder) OnMessageReply() *Builder {
 // Builder is returned by PluginBuilder.OnMessage / OnMessageReply. Configure trigger conditions then call Func(handler).
 type Builder struct {
 	hook           string
+	exactText      string // when non-empty, handler runs only when PlainText (trimmed) equals exactText
 	onlyToMe       bool
 	onlyAdmin      bool
 	onlySuperAdmin bool
@@ -61,10 +69,13 @@ func (b *Builder) IsOnlySuperAdmin() *Builder {
 	return b
 }
 
-// Func registers the handler on the builder's hook. If any trigger condition was set (OnlyToMe, OnlyAdmin, OnlySuperAdmin),
+// Func registers the handler on the builder's hook. If exactText is set, OnlyToMe, OnlyAdmin, or OnlySuperAdmin are set,
 // the handler is wrapped so it is only invoked when all those conditions pass.
 func (b *Builder) Func(h Handler) {
 	wrapped := func(ctx Context) {
+		if b.exactText != "" && strings.TrimSpace(ctx.PlainText()) != b.exactText {
+			return
+		}
 		if b.onlyToMe && !ctx.IsOnlyToMe() {
 			return
 		}
