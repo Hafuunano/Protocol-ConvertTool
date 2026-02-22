@@ -143,6 +143,14 @@ func (c *Context) IsOnlyToMe() bool {
 	return c.OnlyToMe
 }
 
+// CommandPrefix implements protocol.Context. Returns ZeroBot CommandPrefix; empty defaults to "/".
+func (c *Context) CommandPrefix() string {
+	if zero.BotConfig.CommandPrefix != "" {
+		return zero.BotConfig.CommandPrefix
+	}
+	return "/"
+}
+
 // BlockNext implements protocol.Context. Marks that the plugin handled the event; host should stop the chain.
 func (c *Context) BlockNext() {
 	c.blockNext = true

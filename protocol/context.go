@@ -36,6 +36,8 @@ type Context interface {
 	IsAdmin() bool
 	// IsOnlyToMe returns true when the message is reply-to-bot or @-bot (OnlyToMe). Set by host or derived from message.
 	IsOnlyToMe() bool
+	// CommandPrefix returns the bot command prefix (e.g. "/", "!"). Use with command names for OnCommand-style matching.
+	CommandPrefix() string
 	// BlockNext marks that this plugin handled the event; host should not run the rest of the chain (BlockNextPlugin).
 	BlockNext()
 	// ShouldBlockNext returns true after BlockNext() was called. Used by host after each handler to decide whether to break.

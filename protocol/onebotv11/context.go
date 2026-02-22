@@ -20,6 +20,8 @@ type Context struct {
 	IsSuperAdminFunc func(userID string) bool
 	// OnlyToMe, if non-nil, overrides IsOnlyToMe() result. Otherwise derived from message (at-segment to self).
 	OnlyToMe *bool
+	// commandPrefix is the bot command prefix for OnCommand-style matching. If empty, CommandPrefix() returns "/".
+	commandPrefix string
 	// blockNext is set by BlockNext(); host reads via ShouldBlockNext() to stop the chain.
 	blockNext bool
 }
@@ -171,6 +173,14 @@ func (c *Context) IsAdmin() bool {
 	}
 	r := c.Event.Sender.Role
 	return r == "admin" || r == "owner"
+}
+
+// CommandPrefix implements protocol.Context. Returns configured prefix or "/" if not set.
+func (c *Context) CommandPrefix() string {
+	if c != nil && c.commandPrefix != "" {
+		return c.commandPrefix
+	}
+	return "/"
 }
 
 // IsOnlyToMe implements protocol.Context. If OnlyToMe is set by host, use it; else true when message @-s self.
