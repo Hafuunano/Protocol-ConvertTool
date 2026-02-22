@@ -15,6 +15,8 @@ type Context interface {
 	SendWithImage(file string) error
 	// SendWithImageAndText sends one image followed by plain text (e.g. image + caption). file can be path, URL, or base64://...
 	SendWithImageAndText(file string, text string) error
+	// SendPoke sends a poke to the target user (NapCat/OneBot extension: send_poke). Group context includes group_id; private uses user_id only.
+	SendPoke(targetUserID string) error
 	// UserID returns the sender user ID of the current event.
 	UserID() string
 	// GroupID returns the group ID when in a group chat, or empty/"0" for private chat.

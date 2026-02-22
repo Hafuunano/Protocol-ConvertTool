@@ -27,7 +27,13 @@ type Context struct {
 }
 
 // Send implements protocol.Context. Builds send_private_msg/send_group_msg JSON and passes it to Out (no actual send).
+// If msg is a single poke segment, uses SendPoke (send_poke API) for NapCat compatibility.
 func (c *Context) Send(msg protocol.Message) error {
+	if len(msg) == 1 && msg[0].Type == protocol.SegmentTypePoke {
+		if id := pokeTargetFromSegment(msg[0]); id != "" {
+			return c.SendPoke(id)
+		}
+	}
 	payload, err := c.buildSendPayload(msg, false)
 	if err != nil {
 		return err
@@ -75,6 +81,50 @@ func (c *Context) SendWithImageAndText(file string, text string) error {
 		{Type: protocol.SegmentTypeImage, Data: map[string]any{"file": file}},
 		{Type: protocol.SegmentTypeText, Data: map[string]any{"text": text}},
 	})
+}
+
+// SendPoke implements protocol.Context. Uses NapCat/OneBot extension send_poke API (group: user_id + group_id; private: user_id).
+func (c *Context) SendPoke(targetUserID string) error {
+	uid, err := strconv.ParseInt(targetUserID, 10, 64)
+	if err != nil {
+		return err
+	}
+	params := map[string]any{"user_id": uid}
+	if c.Event != nil && c.Event.MessageType == "group" && c.Event.GroupID != 0 {
+		params["group_id"] = c.Event.GroupID
+	}
+	payload, err := json.Marshal(map[string]any{"action": "send_poke", "params": params})
+	if err != nil {
+		return err
+	}
+	if c.Out != nil && len(payload) > 0 {
+		c.Out(payload)
+	}
+	return nil
+}
+
+// pokeTargetFromSegment returns target user ID from a poke segment Data (id or qq).
+func pokeTargetFromSegment(seg protocol.Segment) string {
+	if seg.Data == nil {
+		return ""
+	}
+	for _, k := range []string{"qq", "id"} {
+		if v, ok := seg.Data[k]; ok && v != nil {
+			switch x := v.(type) {
+			case string:
+				if x != "" {
+					return x
+				}
+			case float64:
+				return strconv.FormatInt(int64(x), 10)
+			case int:
+				return strconv.Itoa(x)
+			case int64:
+				return strconv.FormatInt(x, 10)
+			}
+		}
+	}
+	return ""
 }
 
 // buildSendPayload returns the OneBot v11 API request JSON (action + params) for sending msg.

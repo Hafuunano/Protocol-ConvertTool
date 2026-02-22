@@ -66,6 +66,21 @@ func (c *Context) SendWithImageAndText(file string, text string) error {
 	})
 }
 
+// SendPoke implements protocol.Context. Sends a poke to the target user via NapCat send_poke API.
+// Uses ZeroBot's Ctx.SendPoke(groupID, userID) which calls action "send_poke" with group_id and user_id (group_id 0 for private).
+func (c *Context) SendPoke(targetUserID string) error {
+	uid, err := strconv.ParseInt(targetUserID, 10, 64)
+	if err != nil {
+		return err
+	}
+	groupID := int64(0)
+	if c.Ctx != nil && c.Ctx.Event != nil && c.Ctx.Event.GroupID != 0 {
+		groupID = c.Ctx.Event.GroupID
+	}
+	c.Ctx.SendPoke(groupID, uid)
+	return nil
+}
+
 // UserID implements protocol.Context.
 func (c *Context) UserID() string {
 	if c.Ctx == nil || c.Ctx.Event == nil {

@@ -27,6 +27,14 @@ func protocolSegmentToZeroBot(seg protocol.Segment) message.Segment {
 	for k, v := range seg.Data {
 		data[k] = dataToString(v)
 	}
+	// ZeroBot expects "qq" for poke target (CQ: poke,qq=xxx); ensure it is set from "id" if present.
+	if seg.Type == protocol.SegmentTypePoke {
+		if qq, ok := data["qq"]; ok && qq != "" {
+			// already set
+		} else if id, ok := data["id"]; ok && id != "" {
+			data["qq"] = id
+		}
+	}
 	return message.Segment{
 		Type: seg.Type,
 		Data: data,

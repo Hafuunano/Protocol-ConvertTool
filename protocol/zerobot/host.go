@@ -4,6 +4,7 @@ package zerobot
 import (
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 	zero "github.com/wdvxdr1123/ZeroBot"
@@ -40,8 +41,23 @@ func InstallWithMiddlewares(middlewares []protocol.Middleware) {
 		return h
 	}
 	// OnMessage: all messages -> default chain (HookMessage).
+	// If message prefix is bot nickname, also dispatch HookMessageReply (treat as OnlyToMe).
 	zero.OnMessage().Handle(func(ctx *zero.Ctx) {
 		wrap(protocol.Dispatch(protocol.Chain()))(makeContext(ctx, false))
+		plain := strings.TrimSpace(ctx.ExtractPlainText())
+		for _, name := range zero.BotConfig.NickName {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			if plain == name || strings.HasPrefix(plain, name+" ") || strings.HasPrefix(plain, name+",") {
+				chain := protocol.ChainOn(protocol.HookMessageReply)
+				if len(chain) > 0 {
+					wrap(protocol.Dispatch(chain))(makeContext(ctx, true))
+				}
+				break
+			}
+		}
 	})
 	// OnMessageReply: only reply to bot or @ bot -> HookMessageReply chain.
 	zero.OnMessage(zero.OnlyToMe).Handle(func(ctx *zero.Ctx) {
