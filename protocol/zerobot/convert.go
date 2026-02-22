@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 

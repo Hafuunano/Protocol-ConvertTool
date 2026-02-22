@@ -3,7 +3,7 @@ package onebotv11
 import (
 	"encoding/json"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 )
 
 // MarshalMessage encodes msg to OneBot v11 array format JSON: [{"type":"...","data":{...}}, ...].

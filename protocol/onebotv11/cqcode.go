@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 )
 
 // CQ escape sequences (OneBot v11).

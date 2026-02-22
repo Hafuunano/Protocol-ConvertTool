@@ -4,7 +4,7 @@ package onebotv11
 import (
 	"maps"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 )
 
 // Text returns a text segment.

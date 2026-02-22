@@ -4,25 +4,25 @@
 package onebotv11
 
 import (
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 )
 
 // MessageEvent is the common message event payload (private and group).
 // Fields match OneBot v11 event/message.md.
 type MessageEvent struct {
-	Time        int64        `json:"time"`
-	SelfID      int64        `json:"self_id"`
-	PostType    string       `json:"post_type"`    // "message"
-	MessageType string       `json:"message_type"` // "private" | "group"
-	SubType     string       `json:"sub_type"`
-	MessageID   int32        `json:"message_id"`
-	GroupID     int64        `json:"group_id"` // 0 for private
-	UserID      int64        `json:"user_id"`
-	Message     protocol.Message `json:"-"`   // parsed; fill from raw or array
-	RawMessage  string       `json:"raw_message"`
-	Font        int32        `json:"font,omitempty"`
-	Sender      *SenderInfo  `json:"sender,omitempty"`
-	Anonymous   *AnonymousInfo `json:"anonymous,omitempty"`
+	Time        int64            `json:"time"`
+	SelfID      int64            `json:"self_id"`
+	PostType    string           `json:"post_type"`    // "message"
+	MessageType string           `json:"message_type"` // "private" | "group"
+	SubType     string           `json:"sub_type"`
+	MessageID   int32            `json:"message_id"`
+	GroupID     int64            `json:"group_id"` // 0 for private
+	UserID      int64            `json:"user_id"`
+	Message     protocol.Message `json:"-"` // parsed; fill from raw or array
+	RawMessage  string           `json:"raw_message"`
+	Font        int32            `json:"font,omitempty"`
+	Sender      *SenderInfo      `json:"sender,omitempty"`
+	Anonymous   *AnonymousInfo   `json:"anonymous,omitempty"`
 }
 
 // SenderInfo matches OneBot v11 sender object (private: user_id, nickname, sex, age; group: + card, role, title, etc.).

@@ -3,7 +3,7 @@ package zerobot
 import (
 	"strconv"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 	zero "github.com/wdvxdr1123/ZeroBot"
 )
 

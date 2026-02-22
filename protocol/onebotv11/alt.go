@@ -3,7 +3,7 @@ package onebotv11
 import (
 	"strings"
 
-	"github.com/Hafuunano/UniTransfer/protocol"
+	"github.com/Hafuunano/Protocol-ConvertTool/protocol"
 )
 
 // ExtractPlainText returns only the concatenated text of text segments (no CQ/media, no placeholders).
